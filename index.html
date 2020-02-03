@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>CSV to JSON</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="text-align:center">
+    CSV to JSON
+    <script type="text/javascript">
+        function Upload() {
+            var fileUpload = document.getElementById("fileUpload");
+            var regex = /^([a-zA-Z0-9\s_\\.\-:])+(.csv)$/;
+            if (regex.test(fileUpload.value.toLowerCase())) {
+                if (typeof (FileReader) != "undefined") {
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        console.log("Raw File");
+                        console.log(e.target.result);
+                        var lines=e.target.result.split(/\r\n|\n/);
+                        for(let i = 0; i<lines.length; i++){
+                        lines[i] = lines[i].replace(/\s/,'')//delete all blanks
+                        }
+                        var result = [];
+
+                        var headers=lines[0].split(",");
+
+                        for(var i=1;i<lines.length;i++){
+
+                            var obj = {};
+                            var currentline=lines[i].split(",");
+
+                            for(var j=0;j<headers.length;j++){
+                                obj[headers[j]] = currentline[j];
+                            }
+
+                            result.push(obj);
+
+                        }
+                        // console.log("After JSON Conversion");
+                        
+                        // console.log(JSON.stringify(result));
+                        // Post-processing code starts here
+                        const data = {};
+
+                        // Create a map of unique people first
+                        result.forEach(function (object) {                            
+                        if (!data[object.componentName]) {
+                            data[object.componentName] = {
+                            componentId: object.componentId,
+                            componentDescription: object.componentDescription,
+                            componentName: object.componentName,
+                            templateVariables: [],
+                            metrics:[]
+                            };
+                        }
+                        // As you iterate through your results, if this componentName already exists
+                        // add to their array of templateVariables and metrics.
+                        data[object.componentName].templateVariables.push({
+                                    name: object.name,
+                                    label: object.label,
+                                    query: object.query
+                                });
+                        data[object.componentName].metrics.push({
+                                    metricId: object.metricId,
+                                    panelName: object.panelName,
+                                    metricName: object.metricName,
+                                    promQLFunction: object.promQLFunction,
+                                    yvalueLabel: object.yvalueLabel,
+                                    yvalueUnit: object.yvalueUnit,
+                                    color: object.color,
+                                    panelDescription: object.panelDescription,
+                                });
+                        });
+
+                        // Convert back into an array
+                        const dataList = [];
+                        Object.keys(data).forEach(function (componentName) {
+                        dataList.push(data[componentName]);
+                        })
+
+                        
+
+                        //return result; //JavaScript object
+                        console.log("After JSON Objectified");
+                        
+                        console.log(dataList);
+                        //return JSON.stringify(result); //JSON
+                        return result; //JavaScript object
+                        
+                    }
+                    reader.readAsText(fileUpload.files[0]);
+                } else {
+                    alert("This browser does not support HTML5.");
+                }
+            } else {
+                alert("Please upload a valid CSV file.");
+            }
+        }
+    </script>
+    <br>
+    <br>
+    <input type="file" id="fileUpload" />
+    <input type="button" id="upload" value="Upload" onclick="Upload()" />
+    <div id="resultView"></div>
+</body>
+</html>
